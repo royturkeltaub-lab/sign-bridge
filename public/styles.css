@@ -300,3 +300,8 @@ button, .tab, select, summary, label, input[type="range"] {
 /* Sign reader: recognised word and runner-up guesses */
 .big-letter.word { width: auto; min-width: 96px; padding: 0 16px; font-size: 30px; letter-spacing: 0.02em; }
 .alternatives { font-size: 13px; margin-top: 6px; min-height: 1.2em; }
+
+/* Sign reader: teaching a new sign */
+.teach { border-top: 1px solid var(--line); padding-top: 12px; }
+.teach .chip button { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0 0 0 6px; font: inherit; }
+.teach.armed #teach-status { color: var(--warn); }

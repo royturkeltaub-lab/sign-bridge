@@ -2,10 +2,12 @@
 // The reading itself is done by a "reader" (see readers.js): whole signs or fingerspelling.
 import { SIGN, SPOKEN } from '../core/languages.js';
 import { Camera, frameLoop, fitOverlay } from '../vision/mediapipe.js';
-import { LettersReader } from './readers.js';
+import { LettersReader, WordsReader } from './readers.js';
 
 /** Reader factories per mode. `available(signCode)` says whether a mode supports a language. */
 export const READ_MODES = {
+  // The whole-sign model was trained on ASL only.
+  words: { label: 'Whole signs (words)', available: (signCode) => signCode === 'asl', create: () => new WordsReader() },
   letters: { label: 'Fingerspelling (letters)', available: () => true, create: (signCode) => new LettersReader(signCode) },
 };
 
@@ -24,6 +26,7 @@ export function initSignView({ setStatus }) {
   const readers = new Map(); // "mode:lang" -> reader, so text survives switching back and forth
   let reader = null;
   let stopLoop = null;
+  let pendingTeach = null; // word to learn from the next opened video
 
   for (const lang of Object.values(SIGN)) {
     langSelect.append(Object.assign(document.createElement('option'), { value: lang.code, textContent: `${lang.shortName} — ${lang.name}` }));
@@ -57,6 +60,7 @@ export function initSignView({ setStatus }) {
     $('now-alternatives').textContent = '';
     $('sign-hint').textContent = reader.hint;
     renderText();
+    renderTaught();
     // If the picture is already running, load this reader's models in the background.
     if (camera.running) {
       const loading = reader;
@@ -73,11 +77,16 @@ export function initSignView({ setStatus }) {
   }
 
   function onFrame(frame, time) {
-    const ctx = fitOverlay(overlay, frame);
+    if (!reader.ready) return;
+    show((ctx, width, height) => reader.frame(frame, time, ctx, width, height));
+  }
+
+  /** Clear the overlay, let `render` draw on it, and show the state it returns. */
+  function show(render) {
+    const ctx = fitOverlay(overlay, video);
     const { width, height } = overlay;
     ctx.clearRect(0, 0, width, height);
-    if (!reader.ready) return;
-    const state = reader.frame(frame, time, ctx, width, height);
+    const state = render(ctx, width, height);
     nowBig.textContent = state.big;
     $('now-detail').textContent = state.detail;
     $('now-conf').style.width = `${Math.round(Math.max(0, Math.min(1, state.progress)) * 100)}%`;
@@ -101,15 +110,48 @@ export function initSignView({ setStatus }) {
       video.style.transform = mirror;
       overlay.style.transform = mirror;
       stopLoop?.();
-      stopLoop = frameLoop(video, onFrame);
+      stopLoop = null;
       camButton.textContent = '■ Stop';
       camButton.classList.add('on');
-      setStatus(camera.facing === 'file' ? 'Reading signs from the video' : 'Reading signs');
+      if (camera.facing === 'file' && reader.readFile) {
+        // Clips are read frame by frame rather than in real time: slower machines lose nothing.
+        video.pause();
+        await readClip();
+      } else {
+        stopLoop = frameLoop(video, onFrame);
+        setStatus(camera.facing === 'file' ? 'Reading signs from the video' : 'Reading signs');
+      }
     } catch (err) {
       setStatus(`Could not start: ${err.message}`);
     }
     camButton.disabled = false;
     fileButton.disabled = false;
+  }
+
+  /** Read (or, when a word is waiting to be taught, learn from) the clip now in the player. */
+  async function readClip() {
+    if (pendingTeach) {
+      const name = pendingTeach;
+      pendingTeach = null;
+      setStatus(`Learning "${name}" from the video…`);
+      try {
+        const captured = await reader.teachFile(name, video);
+        $('teach-status').textContent = `Learned "${captured.name}" (${captured.examples} example${captured.examples === 1 ? '' : 's'}). Open the video again to check it is recognised.`;
+        $('teach-name').value = '';
+      } catch (err) {
+        $('teach-status').textContent = `Could not learn it: ${err.message}`;
+      }
+      teachBox.classList.remove('armed');
+      renderTaught();
+      setStatus('Sign learned — open a video or start the camera');
+      return;
+    }
+    setStatus('Reading signs from the video…');
+    if (await reader.readFile(video, show)) {
+      nowBig.textContent = reader.words.at(-1) || nowBig.textContent;
+    }
+    renderText();
+    setStatus('Video finished — open another, or start the camera');
   }
 
   function stop() {
@@ -133,7 +175,14 @@ export function initSignView({ setStatus }) {
     if (file) start(file);
   });
   // When a clip ends, keep the last frame and result on screen; "Stop" clears it.
-  video.addEventListener('ended', () => setStatus('Video finished — open another, or start the camera'));
+  video.addEventListener('ended', async () => {
+    setStatus('Video finished — open another, or start the camera');
+    // A sign may still be open when the clip stops; let the reader close it.
+    if (await reader.finish?.()) {
+      nowBig.textContent = reader.last?.gloss || nowBig.textContent;
+      renderText();
+    }
+  });
   langSelect.addEventListener('change', chooseReader);
   modeSelect.addEventListener('change', chooseReader);
   $('space-btn').addEventListener('click', () => {
@@ -155,6 +204,66 @@ export function initSignView({ setStatus }) {
     speechSynthesis.speak(utterance);
   });
 
+  // --- Teaching new signs (readers that support it) ---------------------------------
+  const teachBox = $('teach');
+  function renderTaught() {
+    teachBox.hidden = !reader.canTeach;
+    if (!reader.canTeach) return;
+    $('teach-list').replaceChildren(
+      ...reader.taught().map(({ name, examples }) => {
+        const chip = Object.assign(document.createElement('span'), { className: 'chip', textContent: `${name} ×${examples}` });
+        const remove = Object.assign(document.createElement('button'), { textContent: '✕', title: `Forget "${name}"` });
+        remove.addEventListener('click', () => {
+          reader.forget(name);
+          renderTaught();
+        });
+        chip.append(remove);
+        return chip;
+      }),
+    );
+  }
+  $('teach-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const name = $('teach-name').value.trim();
+    if (!name || !reader.canTeach) return;
+    const teaching = reader;
+    teachBox.classList.add('armed');
+    if (!camera.running || camera.facing === 'file') {
+      // No live camera: learn it from the next video that is opened.
+      pendingTeach = name;
+      $('teach-status').textContent = `Now press "Open video" and choose a clip that shows only the sign for "${name}".`;
+      return;
+    }
+    $('teach-status').textContent = `Now show the sign for "${name}" once, then lower your hands (or let the clip end)…`;
+    try {
+      const captured = await teaching.teach(name);
+      $('teach-status').textContent = `Learned "${captured.name}" (${captured.examples} example${captured.examples === 1 ? '' : 's'}). Teach it again to add another example.`;
+      $('teach-name').value = '';
+    } catch (err) {
+      $('teach-status').textContent = `Could not learn it: ${err.message}`;
+    }
+    teachBox.classList.remove('armed');
+    renderTaught();
+  });
+  // The teach panel depends on the loaded model, so refresh it whenever a reader becomes ready.
+  setInterval(() => reader?.ready && teachBox.hidden === Boolean(reader.canTeach) && renderTaught(), 500);
+
   chooseReader();
-  return { stop, startFile: (file) => start(file) };
+  /** Load the current reader's models ahead of time (called when the tab is opened). */
+  function prepare() {
+    const loading = reader;
+    if (loading.ready || loading.loading) return;
+    loading.loading = true;
+    setStatus('Loading sign reader…');
+    loading
+      .load()
+      .then(() => {
+        loading.ready = true;
+        if (reader === loading && !camera.running) setStatus('Sign reader ready');
+      })
+      .catch((err) => setStatus(`Could not load the sign reader: ${err.message}`))
+      .finally(() => (loading.loading = false));
+  }
+
+  return { stop, prepare, startFile: (file) => start(file) };
 }

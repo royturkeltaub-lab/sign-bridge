@@ -108,6 +108,14 @@
             <button class="btn small" id="speak-btn">🔊 Speak</button>
           </div>
           <p class="muted hint" id="sign-hint"></p>
+          <div class="teach" id="teach" hidden>
+            <form class="typebox" id="teach-form">
+              <input id="teach-name" type="text" autocomplete="off" placeholder="Teach a new sign: type the word, e.g. everyone" maxlength="40" required>
+              <button class="btn" type="submit" id="teach-btn">Teach</button>
+            </form>
+            <p class="muted hint" id="teach-status">Type a word, press Teach, then show that sign once (camera or video). The reader will recognise it afterwards.</p>
+            <div class="caption" id="teach-list"></div>
+          </div>
         </div>
       </div>
     </section>

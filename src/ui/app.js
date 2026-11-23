@@ -27,6 +27,7 @@ function showTab(name) {
   // Only one tab uses the camera at a time.
   if (name !== 'listen') listen.stopCamera();
   if (name !== 'sign') sign.stop();
+  else sign.prepare();
   if (name === 'eval' && !evalsRan) {
     evalsRan = true;
     evals.run();
@@ -41,4 +42,4 @@ const initial = location.hash.slice(1);
 if (['listen', 'sign', 'eval'].includes(initial)) showTab(initial);
 
 // Handy for demos and debugging from the console.
-window.signBridge = { say: (text, lang = 'en') => listen.handleText(text, lang, 'Typed'), player: listen.player };
+window.signBridge = { say: (text, lang = 'en') => listen.handleText(text, lang, 'Typed'), player: listen.player, sign };
