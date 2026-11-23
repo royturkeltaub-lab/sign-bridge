@@ -27,7 +27,9 @@ const SIGNER = {
 // its patterned jacket becomes a plain dark top, and simple short hair is added.
 const HIDDEN_PARTS = /Headwear|Beard/i;
 const PLAIN_PARTS = /Outfit_Top/i;
-const STYLE = { top: 0x2c3a52, hair: 0x2e211b };
+const SKIN_PARTS = /Wolf3D_(Head|Body)$/i;
+// `skin` multiplies the character's skin texture (white = unchanged).
+const STYLE = { top: 0x3a4038, hair: 0x1c1512, skin: 0xf2dcc8 };
 
 const v = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 
@@ -72,6 +74,10 @@ export class Avatar3D {
         const smile = node.morphTargetDictionary?.mouthSmile;
         if (smile !== undefined) node.morphTargetInfluences[smile] = 0.45;
         if (HIDDEN_PARTS.test(node.name)) node.visible = false;
+        if (SKIN_PARTS.test(node.name)) {
+          node.material = node.material.clone();
+          node.material.color.set(STYLE.skin);
+        }
         if (PLAIN_PARTS.test(node.name)) {
           node.material = node.material.clone();
           node.material.map = null;
@@ -123,8 +129,8 @@ export class Avatar3D {
   }
 
   /**
-   * Hair built from a few soft shapes: close-cropped sides and back, more volume on top and
-   * a front that sweeps up and to one side. Sizes are in units of the eye-to-crown height.
+   * Hair built from a few soft shapes: a close crop, a little longer on top with a short
+   * squared-off front. Sizes are in units of the eye-to-crown height.
    */
   addHair(eyeY, headTop) {
     const head = this.bones.Head;
@@ -142,10 +148,8 @@ export class Avatar3D {
       hair.add(mesh);
     };
     clump([0, 0, 0], [0.6, 0.7, 0.765], [-0.5, 0, 0], Math.PI * 0.64); // cropped sides and back
-    clump([0, 0.27, -0.05], [0.58, 0.33, 0.73], [0.06, 0, 0]); // volume on top
-    clump([0.07, 0.3, 0.44], [0.49, 0.2, 0.31], [-0.22, 0, 0.13]); // front, swept to one side
-    clump([-0.25, 0.3, 0.2], [0.37, 0.22, 0.5], [-0.1, 0.15, -0.26]); // parted side
-    clump([0.28, 0.28, 0.06], [0.33, 0.22, 0.54], [-0.06, -0.12, 0.22]);
+    clump([0, 0.2, -0.04], [0.57, 0.52, 0.73], [0.05, 0, 0]); // slightly longer on top
+    clump([0, 0.2, 0.36], [0.5, 0.3, 0.36], [-0.3, 0, 0]); // short, squared-off front
     this.scene.add(hair);
     hair.updateMatrixWorld(true);
     head.attach(hair); // keep it where it is, but let it follow the head
