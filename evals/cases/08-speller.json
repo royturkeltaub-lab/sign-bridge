@@ -1,0 +1,15 @@
+{
+  "id": "speller",
+  "title": "Letter stream → text",
+  "description": "Per-frame letter predictions ([letter, milliseconds, confidence]) must become clean text. null = no hand in view.",
+  "task": "speller",
+  "cases": [
+    { "id": "simple", "label": "O K", "input": [["O", 700], ["K", 700]], "expected": "OK" },
+    { "id": "flicker", "label": "A, brief B/A flicker, C", "input": [["A", 700], ["B", 100], ["A", 100], ["C", 700]], "expected": "AC", "note": "Short flickers are ignored" },
+    { "id": "space", "label": "H I, hand away, Y O", "input": [["H", 700], ["I", 700], [null, 1300], ["Y", 700], ["O", 700]], "expected": "HI YO" },
+    { "id": "double-hold", "label": "L held 2.1 s", "input": [["L", 2100]], "expected": "LL", "note": "A long hold repeats the letter" },
+    { "id": "double-lift", "label": "H E L (lift) L O", "input": [["H", 700], ["E", 700], ["L", 700], [null, 300], ["L", 700], ["O", 700]], "expected": "HELLO" },
+    { "id": "low-confidence", "label": "A at 30% confidence", "input": [["A", 900, 0.3]], "expected": "", "note": "Unsure predictions type nothing" },
+    { "id": "too-short", "label": "A for 0.3 s", "input": [["A", 300]], "expected": "" }
+  ]
+}

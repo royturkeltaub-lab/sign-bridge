@@ -1,0 +1,16 @@
+{
+  "id": "text-language",
+  "title": "Spoken language detection (text)",
+  "description": "Which spoken language a transcript is in.",
+  "task": "text-language",
+  "cases": [
+    { "id": "en-1", "input": "Hello, how are you?", "expected": "en" },
+    { "id": "en-2", "input": "Thank you very much", "expected": "en" },
+    { "id": "en-3", "input": "Where is the bathroom?", "expected": "en" },
+    { "id": "he-1", "input": "שלום, מה שלומך?", "expected": "he" },
+    { "id": "he-2", "input": "תודה רבה", "expected": "he" },
+    { "id": "he-3", "input": "אני אוהב קפה", "expected": "he" },
+    { "id": "he-niqqud", "input": "שָׁלוֹם", "expected": "he" },
+    { "id": "none", "input": "12345 !!!", "expected": "none", "note": "No letters: nothing to detect" }
+  ]
+}

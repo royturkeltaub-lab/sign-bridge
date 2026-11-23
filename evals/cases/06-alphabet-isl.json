@@ -1,0 +1,25 @@
+{
+  "id": "alphabet-isl",
+  "title": "ISL alphabet handshapes",
+  "description": "Handshape used for each Hebrew letter, for letters on which all consulted sources agree. Expected values are named after the equivalent ASL handshape.",
+  "task": "letter-shape",
+  "defaults": { "sign": "isl" },
+  "wrap": "letter",
+  "cases": [
+    { "id": "bet", "input": "ב", "expected": "B" },
+    { "id": "dalet", "input": "ד", "expected": "D" },
+    { "id": "vav", "input": "ו", "expected": "1", "note": "Fist with the index up" },
+    { "id": "tet", "input": "ט", "expected": "F" },
+    { "id": "yod", "input": "י", "expected": "I" },
+    { "id": "kaf", "input": "כ", "expected": "C" },
+    { "id": "lamed", "input": "ל", "expected": "L" },
+    { "id": "samekh", "input": "ס", "expected": "S" },
+    { "id": "tsadi", "input": "צ", "expected": "3" },
+    { "id": "qof", "input": "ק", "expected": "K" },
+    { "id": "resh", "input": "ר", "expected": "R" },
+    { "id": "shin", "input": "ש", "expected": "W" },
+    { "id": "tav", "input": "ת", "expected": "T" },
+    { "id": "final-kaf", "input": "ך", "expected": "C+move", "note": "Final letters add a downward movement" },
+    { "id": "final-tsadi", "input": "ץ", "expected": "3+move" }
+  ]
+}

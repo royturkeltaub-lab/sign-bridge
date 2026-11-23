@@ -1,0 +1,18 @@
+{
+  "name": "sign-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Two-way multilingual sign language translator (speech -> sign, sign -> text) with an eval tool",
+  "scripts": {
+    "start": "node server.js",
+    "share": "node scripts/share.js",
+    "eval": "node src/eval/cli.js",
+    "eval:audio": "node scripts/eval-audio.js",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.3.2",
+    "@mediapipe/tasks-vision": "^1.2.3"
+  }
+}

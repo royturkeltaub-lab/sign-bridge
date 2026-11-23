@@ -1,0 +1,18 @@
+{
+  "id": "plan-he-isl",
+  "title": "Hebrew → ISL signs and fingerspelling",
+  "description": "Known words become ISL signs; everything else is fingerspelled with the ISL alphabet (#). Word order is kept as spoken.",
+  "task": "plan",
+  "defaults": { "sign": "isl" },
+  "wrap": "text",
+  "cases": [
+    { "id": "hello", "input": "שלום", "expected": "שלום" },
+    { "id": "thanks", "input": "תודה רבה", "expected": "תודה" },
+    { "id": "inflection", "input": "אני אוהב קפה", "expected": "אני לאהוב #ק-פ-ה" },
+    { "id": "name", "input": "שלום דנה", "expected": "שלום #ד-נ-ה" },
+    { "id": "object-marker", "input": "אני אוכלת את התפוח", "expected": "אני לאכול #ת-פ-ו-ח", "note": "את + definite noun: marker and article are dropped" },
+    { "id": "final-letter", "input": "שלום לכולם", "expected": "שלום #ל-כ-ו-ל-ם", "note": "Final mem keeps its own (moving) letter" },
+    { "id": "niqqud", "input": "שָׁלוֹם", "expected": "שלום" },
+    { "id": "negation", "input": "אני לא עובד", "expected": "אני לא עבודה" }
+  ]
+}

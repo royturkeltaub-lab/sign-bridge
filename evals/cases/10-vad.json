@@ -1,0 +1,14 @@
+{
+  "id": "vad",
+  "title": "Utterance detection",
+  "description": "Synthetic audio (bursts over background noise). Expected value is the number of utterances sent for transcription.",
+  "task": "vad",
+  "cases": [
+    { "id": "one", "label": "one 1.5 s burst", "input": { "durationMs": 4000, "bursts": [{ "from": 500, "to": 2000 }] }, "expected": "1" },
+    { "id": "two", "label": "two bursts 1.5 s apart", "input": { "durationMs": 7000, "bursts": [{ "from": 500, "to": 2000 }, { "from": 3500, "to": 5000 }] }, "expected": "2" },
+    { "id": "short-pause", "label": "two bursts 0.3 s apart", "input": { "durationMs": 5000, "bursts": [{ "from": 500, "to": 1500 }, { "from": 1800, "to": 2800 }] }, "expected": "1", "note": "A short pause does not split a sentence" },
+    { "id": "noise", "label": "background noise only", "input": { "durationMs": 3000, "bursts": [] }, "expected": "0" },
+    { "id": "click", "label": "0.1 s click", "input": { "durationMs": 3000, "bursts": [{ "from": 1000, "to": 1100 }] }, "expected": "0" },
+    { "id": "quiet-voice", "label": "quiet 1 s burst", "input": { "durationMs": 3000, "bursts": [{ "from": 500, "to": 1500, "level": 0.05 }] }, "expected": "1" }
+  ]
+}

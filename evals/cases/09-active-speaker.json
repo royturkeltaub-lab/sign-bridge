@@ -1,0 +1,15 @@
+{
+  "id": "active-speaker",
+  "title": "Loudest-speaker selection",
+  "description": "Scripted scenes with several faces. Expected value is the index of the face the app should lock onto (-1 = nobody).",
+  "task": "active-speaker",
+  "cases": [
+    { "id": "right-person", "label": "2 faces, face 1 talks", "input": { "faces": [{ "cx": 0.3, "cy": 0.4 }, { "cx": 0.7, "cy": 0.4 }], "durationMs": 3000, "segments": [{ "from": 0, "to": 3000, "speaker": 1 }] }, "expected": "1" },
+    { "id": "left-person", "label": "2 faces, face 0 talks", "input": { "faces": [{ "cx": 0.3, "cy": 0.4 }, { "cx": 0.7, "cy": 0.4 }], "durationMs": 3000, "segments": [{ "from": 0, "to": 3000, "speaker": 0 }] }, "expected": "0" },
+    { "id": "switch", "label": "face 0 talks, then face 1", "input": { "faces": [{ "cx": 0.3, "cy": 0.4 }, { "cx": 0.7, "cy": 0.4 }], "durationMs": 7000, "segments": [{ "from": 0, "to": 3000, "speaker": 0 }, { "from": 3000, "to": 7000, "speaker": 1 }] }, "expected": "1" },
+    { "id": "before-switch", "label": "same scene, sampled at 2.5 s", "input": { "faces": [{ "cx": 0.3, "cy": 0.4 }, { "cx": 0.7, "cy": 0.4 }], "durationMs": 7000, "sampleAt": 2500, "segments": [{ "from": 0, "to": 3000, "speaker": 0 }, { "from": 3000, "to": 7000, "speaker": 1 }] }, "expected": "0" },
+    { "id": "silent-chewing", "label": "face 0 moves mouth in silence", "input": { "faces": [{ "cx": 0.3, "cy": 0.4 }, { "cx": 0.7, "cy": 0.4 }], "durationMs": 3000, "segments": [{ "from": 0, "to": 3000, "speaker": -1, "silentMovers": [0] }] }, "expected": "-1", "note": "Mouth movement without sound is not speech" },
+    { "id": "three-faces", "label": "3 faces, middle one talks", "input": { "faces": [{ "cx": 0.2, "cy": 0.4 }, { "cx": 0.5, "cy": 0.4 }, { "cx": 0.8, "cy": 0.4 }], "durationMs": 3000, "segments": [{ "from": 0, "to": 3000, "speaker": 1 }] }, "expected": "1" },
+    { "id": "nobody", "label": "2 faces, silence", "input": { "faces": [{ "cx": 0.3, "cy": 0.4 }, { "cx": 0.7, "cy": 0.4 }], "durationMs": 2000, "segments": [] }, "expected": "-1" }
+  ]
+}

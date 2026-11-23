@@ -1,0 +1,11 @@
+{
+  "id": "sign-offer",
+  "title": "Sign language offered for a spoken language",
+  "description": "The native sign language offered first once the speaker's language is known.",
+  "task": "sign-offer",
+  "cases": [
+    { "id": "english", "input": "en", "expected": "asl" },
+    { "id": "hebrew", "input": "he", "expected": "isl" },
+    { "id": "unsupported", "input": "fr", "expected": "none", "note": "Not added yet" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "plan-en-asl",
+  "title": "English → ASL signs and fingerspelling",
+  "description": "Known words become signs; names and unknown words are fingerspelled (#).",
+  "task": "plan",
+  "defaults": { "sign": "asl" },
+  "wrap": "text",
+  "cases": [
+    { "id": "name", "input": "Hello Dana", "expected": "HELLO #D-A-N-A" },
+    { "id": "my-name", "input": "My name is Dana", "expected": "MY NAME #D-A-N-A" },
+    { "id": "unknown", "input": "I want pizza", "expected": "ME WANT #P-I-Z-Z-A" },
+    { "id": "synonym", "input": "Thank you mom", "expected": "THANK-YOU MOTHER" },
+    { "id": "all-signs", "input": "Please help me", "expected": "PLEASE HELP ME" }
+  ]
+}

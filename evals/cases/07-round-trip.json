@@ -1,0 +1,100 @@
+{
+  "id": "round-trip-words",
+  "title": "Round trip: rendered fingerspelling → detector",
+  "description": "A word is fingerspelled by the avatar's hand model and read back by the camera detector. The result must be the same word.",
+  "task": "round-trip",
+  "cases": [
+    {
+      "id": "asl-water",
+      "input": {
+        "text": "WATER",
+        "sign": "asl"
+      },
+      "expected": "WATER"
+    },
+    {
+      "id": "asl-hello",
+      "input": {
+        "text": "HELLO",
+        "sign": "asl"
+      },
+      "expected": "HELLO",
+      "note": "Double letter"
+    },
+    {
+      "id": "asl-quick",
+      "input": {
+        "text": "QUICK",
+        "sign": "asl"
+      },
+      "expected": "QUICK"
+    },
+    {
+      "id": "asl-jaz",
+      "input": {
+        "text": "JAZ",
+        "sign": "asl"
+      },
+      "expected": "JAZ",
+      "note": "Moving letters J and Z"
+    },
+    {
+      "id": "asl-zoo",
+      "input": {
+        "text": "ZOO",
+        "sign": "asl"
+      },
+      "expected": "ZOO",
+      "note": "Moving letter, then a double letter"
+    },
+    {
+      "id": "asl-two-words",
+      "input": {
+        "text": "MY DOG",
+        "sign": "asl"
+      },
+      "expected": "MY DOG"
+    },
+    {
+      "id": "isl-shalom",
+      "input": {
+        "text": "שלום",
+        "sign": "isl"
+      },
+      "expected": "שלום",
+      "note": "Ends with a moving final letter"
+    },
+    {
+      "id": "isl-toda",
+      "input": {
+        "text": "תודה",
+        "sign": "isl"
+      },
+      "expected": "תודה"
+    },
+    {
+      "id": "isl-cafe",
+      "input": {
+        "text": "קפה",
+        "sign": "isl"
+      },
+      "expected": "קפה"
+    },
+    {
+      "id": "isl-yeled",
+      "input": {
+        "text": "ילד",
+        "sign": "isl"
+      },
+      "expected": "ילד"
+    },
+    {
+      "id": "isl-two-words",
+      "input": {
+        "text": "בית ספר",
+        "sign": "isl"
+      },
+      "expected": "בית ספר"
+    }
+  ]
+}
