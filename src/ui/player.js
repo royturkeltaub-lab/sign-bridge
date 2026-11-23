@@ -35,11 +35,13 @@ export class SignPlayer {
    */
   async upgrade(canvas) {
     try {
-      const { Avatar3D } = await import('../render/avatar3d.js');
+      const { Avatar3D, CHARACTERS } = await import('../render/avatar3d.js');
+      // ?avatar=classic picks the other bundled character.
+      const character = CHARACTERS[new URLSearchParams(location.search).get('avatar')] || CHARACTERS.casual;
       const canvas3d = Object.assign(document.createElement('canvas'), { id: 'avatar3d' });
       canvas3d.hidden = true;
       canvas.after(canvas3d);
-      const avatar = await Avatar3D.create(canvas3d);
+      const avatar = await Avatar3D.create(canvas3d, character);
       canvas.hidden = true;
       canvas3d.hidden = false;
       this.avatar = avatar;

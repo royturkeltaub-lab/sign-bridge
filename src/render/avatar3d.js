@@ -1,16 +1,22 @@
-// 3D signing avatar: a rigged character (Mixamo-style skeleton with full finger bones)
-// rendered with three.js and posed from the same sign timeline as the 2D avatar.
+// 3D signing avatar: a rigged character with full finger bones, rendered with three.js and
+// posed from the same sign timeline as the 2D avatar.
 //
-// The default character (public/models/avatar/rpm.glb) is the Ready Player Me sample avatar
-// distributed with the three.js examples. Any GLB with Mixamo-style bone names works.
+// Characters (see CHARACTERS): "casual" is Male_Adult_11 from the Microsoft Rocketbox avatar
+// library (MIT licence); "classic" is the Ready Player Me sample avatar distributed with the
+// three.js examples, restyled. Another character needs only an entry there: a GLB or FBX with
+// Mixamo-style or 3ds Max Biped bone names.
 //
 // Posing is by direction: every arm and finger bone is turned so that it points the way the
 // sign's hand model says (wrist -> knuckle -> joint -> tip), and the hand bone takes the
 // sign's full orientation (finger direction + palm normal).
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { resolveHand } from './avatar.js';
 import { BODY } from '../signs/space.js';
+
+export const CHARACTERS = {
+  casual: { url: '/models/avatar/casual/Male_Adult_11.fbx', textures: '/models/avatar/casual/' },
+  classic: { url: '/models/avatar/rpm.glb', restyle: true },
+};
 
 const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
 // Landmark index of each finger's first joint (thumb chain starts one joint later than the bones).
@@ -33,11 +39,52 @@ const STYLE = { top: 0x3a4038, hair: 0x1c1512, skin: 0xf2dcc8 };
 
 const v = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 
+const BIPED_FINGER = { Thumb: 0, Index: 1, Middle: 2, Ring: 3, Pinky: 4 };
+
+/**
+ * Bone name in the model -> the name this file uses (Mixamo's, without prefix), or null.
+ * Handles Mixamo / Ready Player Me rigs and 3ds Max Biped rigs ("Bip01 R UpperArm").
+ */
+function canonicalBone(name) {
+  const biped = name.match(/^Bip01[_ ](.+)$/);
+  if (!biped) return name.replace(/^mixamorig:?/, '');
+  const rest = biped[1].replace(/[_ ]/g, ' ');
+  const simple = { Pelvis: 'Hips', Head: 'Head', Neck: 'Neck', LEye: 'LeftEye', REye: 'RightEye' }[rest];
+  if (simple) return simple;
+  const limb = rest.match(/^([LR]) (UpperArm|Forearm|Hand|Clavicle)$/);
+  if (limb) {
+    const part = { UpperArm: 'Arm', Forearm: 'ForeArm', Hand: 'Hand', Clavicle: 'Shoulder' }[limb[2]];
+    return (limb[1] === 'L' ? 'Left' : 'Right') + part;
+  }
+  const finger = rest.match(/^([LR]) Finger(\d)(\d?)$/);
+  if (finger) {
+    const which = Object.keys(BIPED_FINGER).find((key) => BIPED_FINGER[key] === Number(finger[2]));
+    return `${finger[1] === 'L' ? 'Left' : 'Right'}Hand${which}${finger[3] === '' ? 1 : Number(finger[3]) + 1}`;
+  }
+  return null;
+}
+
+/** Load a character file (GLB or FBX) and return its root object. */
+async function loadCharacter(character) {
+  if (/\.fbx$/i.test(character.url)) {
+    const { FBXLoader } = await import('three/addons/loaders/FBXLoader.js');
+    const manager = new THREE.LoadingManager();
+    // The file names its textures by their original .tga paths; we ship them as .jpg here.
+    manager.setURLModifier((url) => {
+      const texture = url.match(/([^/\\]+)\.tga$/i);
+      return texture ? `${character.textures}${texture[1]}.jpg` : url;
+    });
+    return new FBXLoader(manager).loadAsync(character.url);
+  }
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+  return (await new GLTFLoader().loadAsync(character.url)).scene;
+}
+
 export class Avatar3D {
   /** Load the model and set up the scene. Rejects when WebGL or the model is unavailable. */
-  static async create(canvas, url = '/models/avatar/rpm.glb') {
+  static async create(canvas, character = CHARACTERS.casual) {
     const avatar = new Avatar3D(canvas);
-    await avatar.load(url);
+    await avatar.load(character);
     return avatar;
   }
 
@@ -61,30 +108,42 @@ export class Avatar3D {
     this.scene.add(key, fill, rim);
   }
 
-  async load(url) {
-    const gltf = await new GLTFLoader().loadAsync(url);
-    this.model = gltf.scene;
+  async load(character) {
+    this.model = await loadCharacter(character);
+    // Characters come in different units (metres, centimetres): bring them to about 1.75 tall.
+    const size = new THREE.Box3().setFromObject(this.model).getSize(new THREE.Vector3());
+    this.model.scale.multiplyScalar(1.75 / size.y);
     this.scene.add(this.model);
     this.bones = {};
     this.model.traverse((node) => {
-      if (node.isBone) this.bones[node.name.replace(/^mixamorig:?/, '')] = node;
-      if (node.isMesh) {
-        node.frustumCulled = false; // posed far from the bind pose, so bounds are unreliable
-        // A relaxed, friendly expression where the model supports it.
-        const smile = node.morphTargetDictionary?.mouthSmile;
-        if (smile !== undefined) node.morphTargetInfluences[smile] = 0.45;
-        if (HIDDEN_PARTS.test(node.name)) node.visible = false;
-        if (SKIN_PARTS.test(node.name)) {
-          node.material = node.material.clone();
-          node.material.color.set(STYLE.skin);
-        }
-        if (PLAIN_PARTS.test(node.name)) {
-          node.material = node.material.clone();
-          node.material.map = null;
-          node.material.color.set(STYLE.top);
-          node.material.roughness = 0.9;
-          node.material.metalness = 0;
-        }
+      if (node.isBone) {
+        const name = canonicalBone(node.name);
+        if (name && !this.bones[name]) this.bones[name] = node;
+      }
+      if (!node.isMesh) return;
+      node.frustumCulled = false; // posed far from the bind pose, so bounds are unreliable
+      // Older characters come with Phong materials tuned for another renderer (black base
+      // colour, glossy highlights): rebuild them as plain matte skin and cloth.
+      const matte = (material) =>
+        material.isMeshPhongMaterial
+          ? new THREE.MeshStandardMaterial({ map: material.map, normalMap: material.normalMap, roughness: 0.78, metalness: 0 })
+          : material;
+      node.material = Array.isArray(node.material) ? node.material.map(matte) : matte(node.material);
+      if (!character.restyle) return;
+      // A relaxed, friendly expression where the model supports it.
+      const smile = node.morphTargetDictionary?.mouthSmile;
+      if (smile !== undefined) node.morphTargetInfluences[smile] = 0.45;
+      if (HIDDEN_PARTS.test(node.name)) node.visible = false;
+      if (SKIN_PARTS.test(node.name)) {
+        node.material = node.material.clone();
+        node.material.color.set(STYLE.skin);
+      }
+      if (PLAIN_PARTS.test(node.name)) {
+        node.material = node.material.clone();
+        node.material.map = null;
+        node.material.color.set(STYLE.top);
+        node.material.roughness = 0.9;
+        node.material.metalness = 0;
       }
     });
     for (const name of ['Hips', 'Head', 'RightArm', 'RightForeArm', 'RightHand', 'LeftArm', 'LeftForeArm', 'LeftHand']) {
@@ -103,7 +162,10 @@ export class Avatar3D {
     this.headRest = this.bones.Head.quaternion.clone();
     // Body anchors used to map signing space onto this character's proportions.
     const headBase = this.rest.Head.position.y;
-    const headTop = (this.rest.HeadTop_End || this.rest.Head).position.y;
+    // Crown of the head: the rig's own marker, or else the top of the whole figure.
+    const headTop = this.rest.HeadTop_End
+      ? this.rest.HeadTop_End.position.y
+      : new THREE.Box3().setFromObject(this.model).max.y;
     const eye = this.rest.LeftEye || this.rest.RightEye;
     const eyeY = eye ? eye.position.y : headBase + (headTop - headBase) * 0.4;
     const shoulderR = this.rest.RightArm.position;
@@ -124,7 +186,7 @@ export class Avatar3D {
         [SIGNER.eyeY, eyeY],
       ],
     };
-    this.addHair(eyeY, headTop);
+    if (character.restyle) this.addHair(eyeY, headTop);
     this.frameCamera();
   }
 
@@ -165,7 +227,10 @@ export class Avatar3D {
     const z = side === 'Right' ? new THREE.Vector3().crossVectors(x, y) : new THREE.Vector3().crossVectors(y, x);
     const fingers = {};
     for (const finger of FINGERS) {
-      fingers[finger] = [1, 2, 3].map((i) => dir(`Hand${finger}${i}`, `Hand${finger}${i + 1}`));
+      // Rigs without fingertip markers: the last bone continues in the direction of the one before.
+      fingers[finger] = [1, 2, 3].map((i) =>
+        this.rest[`${side}Hand${finger}${i + 1}`] ? dir(`Hand${finger}${i}`, `Hand${finger}${i + 1}`) : dir(`Hand${finger}${i - 1}`, `Hand${finger}${i}`),
+      );
     }
     return {
       upperDir: dir('Arm', 'ForeArm'),
@@ -195,9 +260,9 @@ export class Avatar3D {
     const a = this.anchor;
     const shoulderY = a.levels[1][1];
     const hipY = a.levels[0][1];
-    const top = a.headTop + (a.headTop - shoulderY) * 0.5;
+    const top = a.headTop + (a.headTop - shoulderY) * 0.42; // room for signs above the head
     const bottom = hipY + (shoulderY - hipY) * 0.22; // waist: rest hands hang just out of view
-    this.view = { centerY: (top + bottom) / 2, height: top - bottom, width: a.scale * 3.3 };
+    this.view = { centerY: (top + bottom) / 2, height: top - bottom, width: a.scale * 2.9 };
   }
 
   resize() {
