@@ -14,6 +14,7 @@ export class SignPlayer {
    */
   constructor(canvas, caption) {
     this.avatar = new Avatar(canvas);
+    this.upgrade(canvas);
     this.caption = caption;
     this.queue = [];
     this.current = null; // { timeline, elapsed, dir }
@@ -26,6 +27,26 @@ export class SignPlayer {
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
+  }
+
+  /**
+   * Swap the drawn avatar for the 3D character once its model has loaded. The drawn one
+   * stays as the fallback where WebGL or the model is unavailable.
+   */
+  async upgrade(canvas) {
+    try {
+      const { Avatar3D } = await import('../render/avatar3d.js');
+      const canvas3d = Object.assign(document.createElement('canvas'), { id: 'avatar3d' });
+      canvas3d.hidden = true;
+      canvas.after(canvas3d);
+      const avatar = await Avatar3D.create(canvas3d);
+      canvas.hidden = true;
+      canvas3d.hidden = false;
+      this.avatar = avatar;
+    } catch (err) {
+      console.warn('3D avatar unavailable, keeping the drawn avatar', err);
+      document.getElementById('avatar3d')?.remove();
+    }
   }
 
   /** Queue a plan. `dir` is the caption's text direction ('ltr' | 'rtl'). */

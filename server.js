@@ -36,6 +36,7 @@ const MOUNTS = [
   ['/vendor/mediapipe/', path.join(ROOT, 'node_modules/@mediapipe/tasks-vision')],
   ['/vendor/transformers/', path.join(ROOT, 'node_modules/@huggingface/transformers/dist')],
   ['/vendor/ort/', path.join(ROOT, 'node_modules/onnxruntime-web/dist')],
+  ['/vendor/three/', path.join(ROOT, 'node_modules/three')],
   ['/', path.join(ROOT, 'public')],
 ];
 
