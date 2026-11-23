@@ -122,21 +122,33 @@ export class Avatar3D {
     this.frameCamera();
   }
 
-  /** Short, simple hair: a cap over the skull, tilted back so the forehead stays clear. */
+  /**
+   * Hair built from a few soft shapes: close-cropped sides and back, more volume on top and
+   * a front that sweeps up and to one side. Sizes are in units of the eye-to-crown height.
+   */
   addHair(eyeY, headTop) {
     const head = this.bones.Head;
-    const height = headTop - eyeY; // eyes to crown
+    const h = headTop - eyeY;
     const eye = (this.rest.LeftEye || this.rest.Head).position;
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.66),
-      new THREE.MeshStandardMaterial({ color: STYLE.hair, roughness: 0.75, metalness: 0 }),
-    );
-    cap.scale.set(height * 0.615, height * 0.71, height * 0.775);
-    cap.position.set(this.anchor.centerX, eyeY + height * 0.35, eye.z - height * 0.65);
-    cap.rotation.x = -0.46; // hairline high on the forehead, low at the nape
-    this.scene.add(cap);
-    cap.updateMatrixWorld(true);
-    head.attach(cap); // keep it where it is, but let it follow the head
+    const centre = new THREE.Vector3(this.anchor.centerX, eyeY + h * 0.35, eye.z - h * 0.65); // middle of the skull
+    const material = new THREE.MeshStandardMaterial({ color: STYLE.hair, roughness: 0.82, metalness: 0 });
+    const hair = new THREE.Group();
+    hair.position.copy(centre);
+    const clump = (offset, radii, turn, cut = Math.PI) => {
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 28, 0, Math.PI * 2, 0, cut), material);
+      mesh.position.set(offset[0] * h, offset[1] * h, offset[2] * h);
+      mesh.scale.set(radii[0] * h, radii[1] * h, radii[2] * h);
+      mesh.rotation.set(turn[0], turn[1], turn[2]);
+      hair.add(mesh);
+    };
+    clump([0, 0, 0], [0.6, 0.7, 0.765], [-0.5, 0, 0], Math.PI * 0.64); // cropped sides and back
+    clump([0, 0.27, -0.05], [0.58, 0.33, 0.73], [0.06, 0, 0]); // volume on top
+    clump([0.07, 0.3, 0.44], [0.49, 0.2, 0.31], [-0.22, 0, 0.13]); // front, swept to one side
+    clump([-0.25, 0.3, 0.2], [0.37, 0.22, 0.5], [-0.1, 0.15, -0.26]); // parted side
+    clump([0.28, 0.28, 0.06], [0.33, 0.22, 0.54], [-0.06, -0.12, 0.22]);
+    this.scene.add(hair);
+    hair.updateMatrixWorld(true);
+    head.attach(hair); // keep it where it is, but let it follow the head
   }
 
   /** Rest-pose measurements for one arm and hand. */
