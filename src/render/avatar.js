@@ -4,9 +4,9 @@ import { add, sub, scale, norm, len, cross, dot } from '../core/vec.js';
 import { handBasis, placeLandmarks, LM } from '../core/handModel.js';
 import { BODY } from '../signs/space.js';
 
-const SKIN = { light: [247, 208, 178], dark: [176, 112, 84], line: 'rgba(104, 58, 38, 0.9)', nail: 'rgba(255, 236, 226, 0.85)' };
-const SHIRT = { top: '#6f8cff', bottom: '#2a3aa6', dark: '#243086', line: 'rgba(20, 26, 78, 0.9)', cuff: '#dfe6ff' };
-const HAIR = { base: '#2b1d17', shine: '#5a3f31' };
+const SKIN = { light: [246, 211, 186], dark: [190, 132, 104], line: 'rgba(150, 98, 74, 0.6)', nail: 'rgba(255, 240, 232, 0.8)' };
+const SHIRT = { top: '#5b96a3', bottom: '#33626f', dark: '#2a515c', line: 'rgba(22, 48, 56, 0.35)', cuff: '#2f5863' };
+const HAIR = { base: '#4a3127', shine: '#7a5443', dark: '#35221b' };
 
 const DIGITS = [LM.THUMB, LM.index, LM.middle, LM.ring, LM.pinky];
 // Finger radius at each joint, as a share of the hand's length (thumb is thicker).
@@ -133,65 +133,57 @@ export class Avatar {
     const fill = ctx.createLinearGradient(0, top, 0, bottom);
     fill.addColorStop(0, SHIRT.top);
     fill.addColorStop(1, SHIRT.bottom);
+    // Neck first, so the collar sits on top of it.
+    const neck = ctx.createLinearGradient(0, P(0, 0.9)[1], 0, P(0, 0.6)[1]);
+    neck.addColorStop(0, mix(SKIN.light, SKIN.dark, 0.5));
+    neck.addColorStop(1, mix(SKIN.light, SKIN.dark, 0.18));
+    ctx.fillStyle = neck;
     ctx.beginPath();
-    ctx.moveTo(...P(-0.17, 0.7));
-    ctx.bezierCurveTo(...P(-0.36, 0.66), ...P(-0.62, 0.66), ...P(-0.76, 0.5));
-    ctx.bezierCurveTo(...P(-0.84, 0.38), ...P(-0.74, 0.1), ...P(-0.6, -0.1));
-    ctx.bezierCurveTo(...P(-0.56, -0.4), ...P(-0.54, -0.7), ...P(-0.56, BODY.hipY - 0.3));
-    ctx.lineTo(...P(0.56, BODY.hipY - 0.3));
-    ctx.bezierCurveTo(...P(0.54, -0.7), ...P(0.56, -0.4), ...P(0.6, -0.1));
-    ctx.bezierCurveTo(...P(0.74, 0.1), ...P(0.84, 0.38), ...P(0.76, 0.5));
-    ctx.bezierCurveTo(...P(0.62, 0.66), ...P(0.36, 0.66), ...P(0.17, 0.7));
+    ctx.moveTo(...P(-0.105, 0.95));
+    ctx.bezierCurveTo(...P(-0.11, 0.8), ...P(-0.13, 0.74), ...P(-0.2, 0.68));
+    ctx.lineTo(...P(0.2, 0.68));
+    ctx.bezierCurveTo(...P(0.13, 0.74), ...P(0.11, 0.8), ...P(0.105, 0.95));
+    ctx.closePath();
+    ctx.fill();
+    // Sweater: sloping shoulders, slim waist.
+    ctx.beginPath();
+    ctx.moveTo(...P(-0.17, 0.705));
+    ctx.bezierCurveTo(...P(-0.32, 0.68), ...P(-0.5, 0.65), ...P(-0.62, 0.57));
+    ctx.bezierCurveTo(...P(-0.7, 0.5), ...P(-0.64, 0.36), ...P(-0.53, 0.3));
+    ctx.bezierCurveTo(...P(-0.5, 0), ...P(-0.44, -0.4), ...P(-0.47, BODY.hipY - 0.3));
+    ctx.lineTo(...P(0.47, BODY.hipY - 0.3));
+    ctx.bezierCurveTo(...P(0.44, -0.4), ...P(0.5, 0), ...P(0.53, 0.3));
+    ctx.bezierCurveTo(...P(0.64, 0.36), ...P(0.7, 0.5), ...P(0.62, 0.57));
+    ctx.bezierCurveTo(...P(0.5, 0.65), ...P(0.32, 0.68), ...P(0.17, 0.705));
+    ctx.quadraticCurveTo(...P(0, 0.56), ...P(-0.17, 0.705));
     ctx.closePath();
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = unit * 0.12;
-    ctx.shadowOffsetY = unit * 0.03;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = unit * 0.1;
+    ctx.shadowOffsetY = unit * 0.025;
     ctx.fillStyle = fill;
     ctx.fill();
     ctx.restore();
-    // Soft shading down the sides and a rim light on the shoulders.
+    // Gentle shading towards the sides.
     ctx.save();
     ctx.clip();
-    const [lx] = P(-0.8, 0);
-    const [rx] = P(0.8, 0);
+    const [lx] = P(-0.7, 0);
+    const [rx] = P(0.7, 0);
     const side = ctx.createLinearGradient(lx, 0, rx, 0);
-    side.addColorStop(0, 'rgba(10, 14, 60, 0.45)');
-    side.addColorStop(0.28, 'rgba(10, 14, 60, 0)');
-    side.addColorStop(0.72, 'rgba(10, 14, 60, 0)');
-    side.addColorStop(1, 'rgba(10, 14, 60, 0.45)');
+    side.addColorStop(0, 'rgba(12, 34, 42, 0.32)');
+    side.addColorStop(0.3, 'rgba(12, 34, 42, 0)');
+    side.addColorStop(0.7, 'rgba(12, 34, 42, 0)');
+    side.addColorStop(1, 'rgba(12, 34, 42, 0.32)');
     ctx.fillStyle = side;
     ctx.fillRect(0, 0, this.w, this.h);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-    ctx.lineWidth = unit * 0.02;
-    ctx.beginPath();
-    ctx.moveTo(...P(-0.74, 0.5));
-    ctx.bezierCurveTo(...P(-0.6, 0.65), ...P(-0.36, 0.655), ...P(-0.18, 0.69));
-    ctx.moveTo(...P(0.74, 0.5));
-    ctx.bezierCurveTo(...P(0.6, 0.65), ...P(0.36, 0.655), ...P(0.18, 0.69));
-    ctx.stroke();
     ctx.restore();
-    // Neck and the skin inside the collar.
-    const neck = ctx.createLinearGradient(0, P(0, 0.9)[1], 0, P(0, 0.5)[1]);
-    neck.addColorStop(0, mix(SKIN.light, SKIN.dark, 0.55));
-    neck.addColorStop(1, mix(SKIN.light, SKIN.dark, 0.2));
-    ctx.fillStyle = neck;
-    ctx.beginPath();
-    ctx.moveTo(...P(-0.13, 0.92));
-    ctx.lineTo(...P(-0.15, 0.7));
-    ctx.quadraticCurveTo(...P(0, 0.5), ...P(0.15, 0.7));
-    ctx.lineTo(...P(0.13, 0.92));
-    ctx.closePath();
-    ctx.fill();
-    // Collar.
+    // Crew-neck collar band.
     ctx.strokeStyle = SHIRT.cuff;
-    ctx.lineWidth = unit * 0.028;
-    ctx.lineJoin = 'round';
+    ctx.lineWidth = unit * 0.04;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(...P(-0.18, 0.705));
-    ctx.quadraticCurveTo(...P(-0.08, 0.62), ...P(0, 0.52));
-    ctx.quadraticCurveTo(...P(0.08, 0.62), ...P(0.18, 0.705));
+    ctx.moveTo(...P(-0.175, 0.705));
+    ctx.quadraticCurveTo(...P(0, 0.555), ...P(0.175, 0.705));
     ctx.stroke();
   }
 
@@ -199,83 +191,94 @@ export class Avatar {
     const { ctx, unit } = this;
     const [hx, hy] = this.project([0, BODY.headCenter[1] + this.breath * 1.5, 0]);
     const r = BODY.headRadius * unit;
-    const rx = r * 0.84;
+    const rx = r * 0.8;
+    // Hair behind the head.
+    ctx.fillStyle = HAIR.dark;
+    ctx.beginPath();
+    ctx.ellipse(hx, hy - r * 0.18, rx * 1.06, r * 0.98, 0, 0, Math.PI * 2);
+    ctx.fill();
     // Ears.
-    ctx.fillStyle = mix(SKIN.light, SKIN.dark, 0.35);
+    ctx.fillStyle = mix(SKIN.light, SKIN.dark, 0.3);
     for (const s of [-1, 1]) {
       ctx.beginPath();
-      ctx.ellipse(hx + s * rx * 0.99, hy + r * 0.06, r * 0.11, r * 0.19, 0, 0, Math.PI * 2);
+      ctx.ellipse(hx + s * rx * 0.97, hy + r * 0.1, r * 0.09, r * 0.16, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Face.
-    const face = ctx.createRadialGradient(hx - rx * 0.25, hy - r * 0.3, r * 0.1, hx, hy, r * 1.15);
+    // Face: soft oval with a narrower chin.
+    const face = ctx.createRadialGradient(hx - rx * 0.2, hy - r * 0.25, r * 0.15, hx, hy + r * 0.1, r * 1.2);
     face.addColorStop(0, mix(SKIN.light, SKIN.dark, 0));
-    face.addColorStop(1, mix(SKIN.light, SKIN.dark, 0.42));
+    face.addColorStop(1, mix(SKIN.light, SKIN.dark, 0.3));
     ctx.fillStyle = face;
     ctx.beginPath();
-    ctx.moveTo(hx - rx, hy - r * 0.1);
-    ctx.bezierCurveTo(hx - rx, hy - r * 1.05, hx + rx, hy - r * 1.05, hx + rx, hy - r * 0.1);
-    ctx.bezierCurveTo(hx + rx, hy + r * 0.62, hx + rx * 0.45, hy + r * 1.02, hx, hy + r * 1.02);
-    ctx.bezierCurveTo(hx - rx * 0.45, hy + r * 1.02, hx - rx, hy + r * 0.62, hx - rx, hy - r * 0.1);
+    ctx.moveTo(hx - rx, hy - r * 0.12);
+    ctx.bezierCurveTo(hx - rx, hy - r * 1.0, hx + rx, hy - r * 1.0, hx + rx, hy - r * 0.12);
+    ctx.bezierCurveTo(hx + rx * 0.98, hy + r * 0.52, hx + rx * 0.5, hy + r * 0.98, hx, hy + r * 0.98);
+    ctx.bezierCurveTo(hx - rx * 0.5, hy + r * 0.98, hx - rx * 0.98, hy + r * 0.52, hx - rx, hy - r * 0.12);
     ctx.fill();
-    // Hair: a swept fringe with a soft highlight.
-    const hair = ctx.createLinearGradient(hx - rx, hy - r, hx + rx, hy - r * 0.2);
+    // Warm cheeks.
+    for (const s of [-1, 1]) {
+      const cheek = ctx.createRadialGradient(hx + s * rx * 0.52, hy + r * 0.36, 0, hx + s * rx * 0.52, hy + r * 0.36, r * 0.24);
+      cheek.addColorStop(0, 'rgba(232, 128, 112, 0.28)');
+      cheek.addColorStop(1, 'rgba(232, 128, 112, 0)');
+      ctx.fillStyle = cheek;
+      ctx.fillRect(hx - r, hy, r * 2, r);
+    }
+    // Hair: side-parted fringe with volume above the forehead.
+    const hair = ctx.createLinearGradient(hx - rx, hy - r * 1.1, hx + rx, hy - r * 0.2);
     hair.addColorStop(0, HAIR.shine);
-    hair.addColorStop(0.5, HAIR.base);
-    hair.addColorStop(1, HAIR.base);
+    hair.addColorStop(0.55, HAIR.base);
+    hair.addColorStop(1, HAIR.dark);
     ctx.fillStyle = hair;
     ctx.beginPath();
-    ctx.moveTo(hx - rx * 1.04, hy + r * 0.02);
-    ctx.bezierCurveTo(hx - rx * 1.2, hy - r * 1.25, hx + rx * 1.2, hy - r * 1.3, hx + rx * 1.04, hy + r * 0.02);
-    ctx.bezierCurveTo(hx + rx * 0.98, hy - r * 0.35, hx + rx * 0.7, hy - r * 0.52, hx + rx * 0.35, hy - r * 0.56);
-    ctx.bezierCurveTo(hx - rx * 0.1, hy - r * 0.6, hx - rx * 0.55, hy - r * 0.42, hx - rx * 0.9, hy - r * 0.2);
+    ctx.moveTo(hx - rx * 1.05, hy + r * 0.12);
+    ctx.bezierCurveTo(hx - rx * 1.22, hy - r * 0.75, hx - rx * 0.7, hy - r * 1.22, hx, hy - r * 1.2);
+    ctx.bezierCurveTo(hx + rx * 0.75, hy - r * 1.22, hx + rx * 1.22, hy - r * 0.7, hx + rx * 1.05, hy + r * 0.12);
+    ctx.bezierCurveTo(hx + rx * 1.0, hy - r * 0.2, hx + rx * 0.92, hy - r * 0.42, hx + rx * 0.62, hy - r * 0.56);
+    ctx.bezierCurveTo(hx + rx * 0.2, hy - r * 0.44, hx - rx * 0.3, hy - r * 0.5, hx - rx * 0.56, hy - r * 0.72);
+    ctx.bezierCurveTo(hx - rx * 0.78, hy - r * 0.5, hx - rx * 0.94, hy - r * 0.3, hx - rx * 1.05, hy + r * 0.12);
     ctx.closePath();
     ctx.fill();
-    // Brows and eyes.
+    // Eyes: soft dark ovals with a highlight and a lash line; brows above.
     ctx.lineCap = 'round';
+    const open = Math.max(0.1, this.eyeOpen);
     for (const s of [-1, 1]) {
-      const ex = hx + s * rx * 0.42;
-      const ey = hy + r * 0.04;
-      ctx.strokeStyle = HAIR.base;
-      ctx.lineWidth = r * 0.055;
+      const ex = hx + s * rx * 0.44;
+      const ey = hy + r * 0.1;
+      ctx.strokeStyle = 'rgba(74, 49, 39, 0.8)';
+      ctx.lineWidth = r * 0.042;
       ctx.beginPath();
-      ctx.moveTo(ex - s * r * 0.17, ey - r * 0.2);
-      ctx.quadraticCurveTo(ex, ey - r * 0.27, ex + s * r * 0.15, ey - r * 0.2);
+      ctx.moveTo(ex - s * r * 0.14, ey - r * 0.2);
+      ctx.quadraticCurveTo(ex, ey - r * 0.255, ex + s * r * 0.14, ey - r * 0.19);
       ctx.stroke();
-      const open = Math.max(0.08, this.eyeOpen);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = '#3b2a23';
       ctx.beginPath();
-      ctx.ellipse(ex, ey, r * 0.125, r * 0.085 * open, 0, 0, Math.PI * 2);
+      ctx.ellipse(ex, ey, r * 0.058, r * 0.074 * open, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.save();
-      ctx.clip();
-      ctx.fillStyle = '#3a2a22';
+      if (open > 0.5) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.beginPath();
+        ctx.arc(ex + r * 0.02, ey - r * 0.028, r * 0.018, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(59, 42, 35, 0.75)';
+      ctx.lineWidth = r * 0.026;
       ctx.beginPath();
-      ctx.arc(ex, ey, r * 0.066, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(ex + r * 0.024, ey - r * 0.026, r * 0.02, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      ctx.strokeStyle = 'rgba(60, 36, 28, 0.85)';
-      ctx.lineWidth = r * 0.03;
-      ctx.beginPath();
-      ctx.ellipse(ex, ey, r * 0.13, r * 0.09 * open, 0, Math.PI * 1.05, Math.PI * 1.95);
+      ctx.moveTo(ex - r * 0.085, ey - r * 0.05 * open);
+      ctx.quadraticCurveTo(ex, ey - r * 0.105 * open, ex + r * 0.085, ey - r * 0.05 * open);
       ctx.stroke();
     }
-    // Nose and mouth.
-    ctx.strokeStyle = 'rgba(140, 84, 60, 0.7)';
-    ctx.lineWidth = r * 0.035;
+    // Nose (a hint) and a relaxed, closed smile.
+    ctx.strokeStyle = 'rgba(160, 104, 80, 0.5)';
+    ctx.lineWidth = r * 0.03;
     ctx.beginPath();
-    ctx.moveTo(hx + r * 0.02, hy + r * 0.12);
-    ctx.quadraticCurveTo(hx + r * 0.1, hy + r * 0.36, hx - r * 0.02, hy + r * 0.38);
+    ctx.moveTo(hx - r * 0.045, hy + r * 0.4);
+    ctx.quadraticCurveTo(hx, hy + r * 0.435, hx + r * 0.045, hy + r * 0.4);
     ctx.stroke();
-    ctx.strokeStyle = '#a2463f';
-    ctx.lineWidth = r * 0.05;
+    ctx.strokeStyle = '#b8695f';
+    ctx.lineWidth = r * 0.04;
     ctx.beginPath();
-    ctx.moveTo(hx - r * 0.2, hy + r * 0.6);
-    ctx.quadraticCurveTo(hx, hy + r * 0.74, hx + r * 0.2, hy + r * 0.6);
+    ctx.moveTo(hx - r * 0.15, hy + r * 0.62);
+    ctx.quadraticCurveTo(hx, hy + r * 0.72, hx + r * 0.15, hy + r * 0.62);
     ctx.stroke();
   }
 
@@ -290,32 +293,27 @@ export class Avatar {
     sleeve.addColorStop(0, SHIRT.top);
     sleeve.addColorStop(1, SHIRT.bottom);
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = unit * 0.08;
-    ctx.shadowOffsetY = unit * 0.025;
-    ctx.fillStyle = SHIRT.line;
-    ctx.beginPath();
-    capsule(ctx, s, unit * 0.135, e, unit * 0.105);
-    capsule(ctx, e, unit * 0.105, cuff, unit * 0.082 * depth);
-    ctx.fill();
-    ctx.restore();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = unit * 0.07;
+    ctx.shadowOffsetY = unit * 0.02;
     ctx.fillStyle = sleeve;
     ctx.beginPath();
-    capsule(ctx, s, unit * 0.125, e, unit * 0.097);
-    capsule(ctx, e, unit * 0.097, cuff, unit * 0.075 * depth);
+    capsule(ctx, s, unit * 0.105, e, unit * 0.082);
+    capsule(ctx, e, unit * 0.082, cuff, unit * 0.064 * depth);
     ctx.fill();
-    // Wrist skin and cuff band.
-    ctx.fillStyle = mix(SKIN.light, SKIN.dark, 0.3);
+    ctx.restore();
+    // Wrist skin, then a ribbed cuff in the sweater's darker tone.
+    ctx.fillStyle = mix(SKIN.light, SKIN.dark, 0.25);
     ctx.beginPath();
-    capsule(ctx, cuff, unit * 0.058 * depth, w, unit * 0.052 * depth);
+    capsule(ctx, cuff, unit * 0.05 * depth, w, unit * 0.047 * depth);
     ctx.fill();
     ctx.strokeStyle = SHIRT.cuff;
-    ctx.lineWidth = unit * 0.03;
+    ctx.lineWidth = unit * 0.045;
     ctx.lineCap = 'round';
     const nx = -(w[1] - e[1]);
     const ny = w[0] - e[0];
     const nl = Math.hypot(nx, ny) || 1;
-    const half = unit * 0.07 * depth;
+    const half = unit * 0.048 * depth;
     ctx.beginPath();
     ctx.moveTo(cuff[0] + (nx / nl) * half, cuff[1] + (ny / nl) * half);
     ctx.lineTo(cuff[0] - (nx / nl) * half, cuff[1] - (ny / nl) * half);
@@ -331,13 +329,13 @@ export class Avatar {
     const zRef = landmarks[9][2];
     const meanZ = (ids) => ids.reduce((sum, i) => sum + landmarks[i][2], 0) / ids.length;
     // Nearer parts are lighter; the back of the hand is a shade darker than the palm.
-    const tone = (z) => mix(SKIN.light, SKIN.dark, clamp01(0.16 + (facing ? 0 : 0.14) + (zRef - z) * 1.5));
+    const tone = (z) => mix(SKIN.light, SKIN.dark, clamp01(0.1 + (facing ? 0 : 0.12) + (zRef - z) * 1.3));
 
     const parts = [{ kind: 'palm', z: meanZ(PALM) - 0.001 }];
     DIGITS.forEach((ids, d) => parts.push({ kind: 'digit', ids, d, z: meanZ(ids.slice(1)) }));
     parts.sort((a, b) => a.z - b.z);
 
-    const outline = Math.max(1, scalePx * 0.022);
+    const outline = Math.max(0.8, scalePx * 0.014);
     const trace = (part, grow) => {
       ctx.beginPath();
       if (part.kind === 'palm') {
