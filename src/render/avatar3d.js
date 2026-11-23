@@ -23,8 +23,11 @@ const SIGNER = {
   halfWidth: Math.abs(BODY.shoulderR[0]),
 };
 
-// Costume pieces that distract from the face and hands.
-const HIDDEN_PARTS = /^$/;
+// Neutral styling: the sample character's costume pieces (hat with wig, moustache) are hidden,
+// its patterned jacket becomes a plain dark top, and simple short hair is added.
+const HIDDEN_PARTS = /Headwear|Beard/i;
+const PLAIN_PARTS = /Outfit_Top/i;
+const STYLE = { top: 0x2c3a52, hair: 0x2e211b };
 
 const v = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 
@@ -69,6 +72,13 @@ export class Avatar3D {
         const smile = node.morphTargetDictionary?.mouthSmile;
         if (smile !== undefined) node.morphTargetInfluences[smile] = 0.45;
         if (HIDDEN_PARTS.test(node.name)) node.visible = false;
+        if (PLAIN_PARTS.test(node.name)) {
+          node.material = node.material.clone();
+          node.material.map = null;
+          node.material.color.set(STYLE.top);
+          node.material.roughness = 0.9;
+          node.material.metalness = 0;
+        }
       }
     });
     for (const name of ['Hips', 'Head', 'RightArm', 'RightForeArm', 'RightHand', 'LeftArm', 'LeftForeArm', 'LeftHand']) {
@@ -108,7 +118,25 @@ export class Avatar3D {
         [SIGNER.eyeY, eyeY],
       ],
     };
+    this.addHair(eyeY, headTop);
     this.frameCamera();
+  }
+
+  /** Short, simple hair: a cap over the skull, tilted back so the forehead stays clear. */
+  addHair(eyeY, headTop) {
+    const head = this.bones.Head;
+    const height = headTop - eyeY; // eyes to crown
+    const eye = (this.rest.LeftEye || this.rest.Head).position;
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.66),
+      new THREE.MeshStandardMaterial({ color: STYLE.hair, roughness: 0.75, metalness: 0 }),
+    );
+    cap.scale.set(height * 0.615, height * 0.71, height * 0.775);
+    cap.position.set(this.anchor.centerX, eyeY + height * 0.35, eye.z - height * 0.65);
+    cap.rotation.x = -0.46; // hairline high on the forehead, low at the nape
+    this.scene.add(cap);
+    cap.updateMatrixWorld(true);
+    head.attach(cap); // keep it where it is, but let it follow the head
   }
 
   /** Rest-pose measurements for one arm and hand. */
