@@ -39,6 +39,7 @@ const STYLE = { top: 0x3a4038, hair: 0x1c1512, skin: 0xf2dcc8 };
 
 const v = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 
+const BLANK_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const BIPED_FINGER = { Thumb: 0, Index: 1, Middle: 2, Ring: 3, Pinky: 4 };
 
 /**
@@ -72,7 +73,10 @@ async function loadCharacter(character) {
     // The file names its textures by their original .tga paths; we ship them as .jpg here.
     manager.setURLModifier((url) => {
       const texture = url.match(/([^/\\]+)\.tga$/i);
-      return texture ? `${character.textures}${texture[1]}.jpg` : url;
+      if (!texture) return url;
+      // Gloss maps are not used (materials are rebuilt matte), so do not fetch them.
+      if (/_specular$/i.test(texture[1])) return BLANK_IMAGE;
+      return `${character.textures}${texture[1]}.jpg`;
     });
     return new FBXLoader(manager).loadAsync(character.url);
   }
