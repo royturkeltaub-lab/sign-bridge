@@ -5,7 +5,7 @@ import { textToPlan } from '../translate/gloss.js';
 import { Microphone } from '../speech/mic.js';
 import { Transcriber } from '../speech/transcriber.js';
 import { Camera, createFaceLandmarker, frameLoop, fitOverlay } from '../vision/mediapipe.js';
-import { ActiveSpeakerSelector, mouthOpenness, faceBox } from '../vision/activeSpeaker.js';
+import { ActiveSpeakerSelector, mouthOpenness, faceBox, lipsBox, LIPS_OUTER, LIPS_INNER } from '../vision/activeSpeaker.js';
 import { SignPlayer } from './player.js';
 
 const $ = (id) => document.getElementById(id);
@@ -36,6 +36,7 @@ export function initListenView({ setStatus }) {
   let stopLoop = null;
   let speakerNow = null; // track id of the current speaker
   let speakerAtSpeech = null; // speaker while the current utterance was being said
+  let showLips = true;
 
   for (const lang of Object.values(SIGN)) {
     signSelect.append(el('option', { value: lang.code, textContent: `${lang.shortName} — ${lang.name}` }));
@@ -170,6 +171,7 @@ export function initListenView({ setStatus }) {
     ctx.clearRect(0, 0, width, height);
     const result = faceLandmarker.detectForVideo(frame, time);
     const faces = result.faceLandmarks.map((landmarks, i) => ({
+      landmarks,
       box: faceBox(landmarks),
       mouthOpen: mouthOpenness(landmarks, result.faceBlendshapes?.[i]?.categories),
     }));
@@ -195,8 +197,65 @@ export function initListenView({ setStatus }) {
       ctx.lineWidth = isSpeaker ? Math.max(4, width / 200) : Math.max(1.5, width / 500);
       ctx.strokeRect(track.box.x * width, track.box.y * height, track.box.w * width, track.box.h * height);
     }
+    // Lip-reading aid: the speaker's lips (or the only face in view), outlined and enlarged.
+    const lipsOf = selected || (state.tracks.length === 1 ? state.tracks[0] : null);
+    if (showLips && lipsOf?.landmarks) drawLips(ctx, frame, lipsOf.landmarks, width, height);
     chip.hidden = !selected;
     if (selected) chip.textContent = `Following Person ${selected.id}${state.tracks.length > 1 ? ` of ${state.tracks.length} faces` : ''}`;
+  }
+
+  /** Trace a lip contour, mapping normalised landmark coordinates through `toPixel`. */
+  function lipPath(ctx, landmarks, indices, toPixel) {
+    indices.forEach((index, n) => {
+      const [x, y] = toPixel(landmarks[index]);
+      if (n) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    });
+    ctx.closePath();
+  }
+
+  function strokeLips(ctx, landmarks, toPixel, lineWidth) {
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = '#ff5d8f';
+    ctx.shadowBlur = lineWidth * 3;
+    ctx.strokeStyle = '#ff7aa5';
+    ctx.lineWidth = lineWidth;
+    ctx.fillStyle = 'rgba(255, 93, 143, 0.22)';
+    ctx.beginPath();
+    lipPath(ctx, landmarks, LIPS_OUTER, toPixel);
+    lipPath(ctx, landmarks, LIPS_INNER, toPixel);
+    ctx.fill('evenodd'); // tint the lips, not the opening between them
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Outline the lips on the face and show them enlarged in a corner of the picture. */
+  function drawLips(ctx, frame, landmarks, width, height) {
+    strokeLips(ctx, landmarks, (p) => [p.x * width, p.y * height], Math.max(2, width / 320));
+    // Enlarged view: a crop around the mouth, about twice the lips' width.
+    const lips = lipsBox(landmarks);
+    const cropW = Math.max(lips.w * 2, 0.04) * width;
+    const cropH = cropW * 0.62;
+    const cropX = (lips.x + lips.w / 2) * width - cropW / 2;
+    const cropY = (lips.y + lips.h / 2) * height - cropH / 2;
+    const viewW = width * 0.34;
+    const viewH = viewW * 0.62;
+    const viewX = width - viewW - width * 0.02;
+    const viewY = width * 0.02;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(viewX, viewY, viewW, viewH, width * 0.015);
+    ctx.clip();
+    ctx.drawImage(frame, cropX, cropY, cropW, cropH, viewX, viewY, viewW, viewH);
+    const zoom = viewW / cropW;
+    strokeLips(ctx, landmarks, (p) => [viewX + (p.x * width - cropX) * zoom, viewY + (p.y * height - cropY) * zoom], Math.max(2, width / 260));
+    ctx.restore();
+    ctx.strokeStyle = '#ff7aa5';
+    ctx.lineWidth = Math.max(2, width / 400);
+    ctx.beginPath();
+    ctx.roundRect(viewX, viewY, viewW, viewH, width * 0.015);
+    ctx.stroke();
   }
 
   async function startCamera(facing) {
@@ -233,6 +292,10 @@ export function initListenView({ setStatus }) {
   micButton.addEventListener('click', toggleMic);
   camButton.addEventListener('click', () => (camera.running ? stopCamera() : startCamera()));
   $('listen-flip-btn').addEventListener('click', () => camera.running && startCamera(camera.facing === 'user' ? 'environment' : 'user'));
+  $('lips-btn').addEventListener('click', (event) => {
+    showLips = !showLips;
+    event.currentTarget.setAttribute('aria-pressed', String(showLips));
+  });
   signSelect.addEventListener('change', () => setSignLanguage(signSelect.value));
   $('speed').addEventListener('input', (event) => (player.speed = Number(event.target.value)));
   $('replay-btn').addEventListener('click', () => player.replay());

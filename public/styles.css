@@ -305,3 +305,6 @@ button, .tab, select, summary, label, input[type="range"] {
 .teach { border-top: 1px solid var(--line); padding-top: 12px; }
 .teach .chip button { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0 0 0 6px; font: inherit; }
 .teach.armed #teach-status { color: var(--warn); }
+
+/* Toggle buttons (e.g. lip highlight) */
+.btn[aria-pressed="true"] { border-color: var(--accent-2); color: var(--accent-2); }

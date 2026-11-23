@@ -85,7 +85,7 @@ export class ActiveSpeakerSelector {
     faces.forEach((face, fi) => {
       let track = this.tracks.get(assigned.get(fi));
       if (!track) {
-        track = { id: this.nextId++, box: face.box, mouthOpen: face.mouthOpen, evidence: 0, activity: 0, seenAt: time };
+        track = { id: this.nextId++, box: face.box, mouthOpen: face.mouthOpen, landmarks: face.landmarks, evidence: 0, activity: 0, seenAt: time };
         this.tracks.set(track.id, track);
       } else {
         // Mouth movement per second, smoothed; it only counts while the room is loud.
@@ -94,6 +94,7 @@ export class ActiveSpeakerSelector {
         track.evidence = track.evidence * decay + track.activity * loudness * (dt / 1000);
         track.box = face.box;
         track.mouthOpen = face.mouthOpen;
+        track.landmarks = face.landmarks; // latest landmarks, for drawing (may be undefined)
         track.seenAt = time;
       }
     });
@@ -127,4 +128,24 @@ export class ActiveSpeakerSelector {
       this.selectedId = null;
     }
   }
+}
+
+// MediaPipe face-mesh landmark indices around the lips, in drawing order.
+export const LIPS_OUTER = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
+export const LIPS_INNER = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+
+/** Bounding box of the lips { x, y, w, h } in normalised image coordinates. */
+export function lipsBox(landmarks) {
+  let minX = 1;
+  let minY = 1;
+  let maxX = 0;
+  let maxY = 0;
+  for (const i of LIPS_OUTER) {
+    const p = landmarks[i];
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
