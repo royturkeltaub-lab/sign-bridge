@@ -271,7 +271,15 @@ export class WordsReader {
 
   /** The picture stopped (clip ended): close a sign that was still in progress. */
   async finish() {
-    return this.recognizer ? this.take(await this.recognizer.flush()) : false;
+    if (!this.recognizer) return false;
+    // flush() can return several signs at once (everything still open when the picture stopped).
+    const out = await this.recognizer.flush();
+    let changed = false;
+    for (const event of out.events?.length ? out.events : [out]) {
+      const one = event.gloss ? (event.accepted ? { result: event } : { rejected: event }) : event;
+      changed = this.take(one) || changed;
+    }
+    return changed;
   }
 
   reset() {
