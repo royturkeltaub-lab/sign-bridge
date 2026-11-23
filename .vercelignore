@@ -1,0 +1,7 @@
+.cert
+.claude
+.claude-flow
+evals/wordsigns
+evals/results
+tests
+dist

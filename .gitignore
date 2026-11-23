@@ -7,3 +7,5 @@ evals/results/
 *.log
 # Third-party sign clips and landmarks used by the word-sign eval: not redistributed here.
 evals/wordsigns/
+dist/
+.vercel/
