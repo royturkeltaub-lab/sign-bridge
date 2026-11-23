@@ -5,7 +5,7 @@ import { textToPlan } from '../translate/gloss.js';
 import { Microphone } from '../speech/mic.js';
 import { Transcriber } from '../speech/transcriber.js';
 import { Camera, createFaceLandmarker, frameLoop, fitOverlay } from '../vision/mediapipe.js';
-import { ActiveSpeakerSelector, mouthOpenness, faceBox, lipsBox, LIPS_OUTER, LIPS_INNER } from '../vision/activeSpeaker.js';
+import { ActiveSpeakerSelector, mouthOpenness, faceBox, lipsBox } from '../vision/activeSpeaker.js';
 import { SignPlayer } from './player.js';
 
 const $ = (id) => document.getElementById(id);
@@ -197,64 +197,38 @@ export function initListenView({ setStatus }) {
       ctx.lineWidth = isSpeaker ? Math.max(4, width / 200) : Math.max(1.5, width / 500);
       ctx.strokeRect(track.box.x * width, track.box.y * height, track.box.w * width, track.box.h * height);
     }
-    // Lip-reading aid: the speaker's lips (or the only face in view), outlined and enlarged.
+    // Lip-reading aid: the speaker's lips (or the only face in view), enlarged in a corner.
     const lipsOf = selected || (state.tracks.length === 1 ? state.tracks[0] : null);
     if (showLips && lipsOf?.landmarks) drawLips(ctx, frame, lipsOf.landmarks, width, height);
     chip.hidden = !selected;
     if (selected) chip.textContent = `Following Person ${selected.id}${state.tracks.length > 1 ? ` of ${state.tracks.length} faces` : ''}`;
   }
 
-  /** Trace a lip contour, mapping normalised landmark coordinates through `toPixel`. */
-  function lipPath(ctx, landmarks, indices, toPixel) {
-    indices.forEach((index, n) => {
-      const [x, y] = toPixel(landmarks[index]);
-      if (n) ctx.lineTo(x, y);
-      else ctx.moveTo(x, y);
-    });
-    ctx.closePath();
-  }
+  const LIP_COLOR = '#37d0a0';
 
-  function strokeLips(ctx, landmarks, toPixel, lineWidth) {
-    ctx.save();
-    ctx.lineJoin = 'round';
-    ctx.shadowColor = '#ff5d8f';
-    ctx.shadowBlur = lineWidth * 3;
-    ctx.strokeStyle = '#ff7aa5';
-    ctx.lineWidth = lineWidth;
-    ctx.fillStyle = 'rgba(255, 93, 143, 0.22)';
-    ctx.beginPath();
-    lipPath(ctx, landmarks, LIPS_OUTER, toPixel);
-    lipPath(ctx, landmarks, LIPS_INNER, toPixel);
-    ctx.fill('evenodd'); // tint the lips, not the opening between them
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  /** Outline the lips on the face and show them enlarged in a corner of the picture. */
+  /** Lip-reading aid: a small enlarged view of the mouth that follows the lips. Nothing is drawn on the face. */
   function drawLips(ctx, frame, landmarks, width, height) {
-    strokeLips(ctx, landmarks, (p) => [p.x * width, p.y * height], Math.max(2, width / 320));
-    // Enlarged view: a crop around the mouth, about twice the lips' width.
+    // A crop around the mouth, about twice the lips' width.
     const lips = lipsBox(landmarks);
     const cropW = Math.max(lips.w * 2, 0.04) * width;
     const cropH = cropW * 0.62;
     const cropX = (lips.x + lips.w / 2) * width - cropW / 2;
     const cropY = (lips.y + lips.h / 2) * height - cropH / 2;
-    const viewW = width * 0.34;
+    const viewW = width * 0.2;
     const viewH = viewW * 0.62;
     const viewX = width - viewW - width * 0.02;
     const viewY = width * 0.02;
+    const radius = width * 0.01;
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(viewX, viewY, viewW, viewH, width * 0.015);
+    ctx.roundRect(viewX, viewY, viewW, viewH, radius);
     ctx.clip();
     ctx.drawImage(frame, cropX, cropY, cropW, cropH, viewX, viewY, viewW, viewH);
-    const zoom = viewW / cropW;
-    strokeLips(ctx, landmarks, (p) => [viewX + (p.x * width - cropX) * zoom, viewY + (p.y * height - cropY) * zoom], Math.max(2, width / 260));
     ctx.restore();
-    ctx.strokeStyle = '#ff7aa5';
-    ctx.lineWidth = Math.max(2, width / 400);
+    ctx.strokeStyle = LIP_COLOR;
+    ctx.lineWidth = Math.max(1.5, width / 520);
     ctx.beginPath();
-    ctx.roundRect(viewX, viewY, viewW, viewH, width * 0.015);
+    ctx.roundRect(viewX, viewY, viewW, viewH, radius);
     ctx.stroke();
   }
 
