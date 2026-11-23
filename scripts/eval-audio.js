@@ -3,6 +3,8 @@
 // (1) the detected language, (2) the transcript, (3) the signs the transcript produces.
 //   npm run eval:audio                      whisper-base
 //   npm run eval:audio -- small             whisper-small
+//   npm run eval:audio -- base --gpu-weights  the weights the browser uses on WebGPU (fp32 encoder,
+//                                             q4 decoder) instead of the q8 it uses on CPU
 //   npm run eval:audio -- base --prior=same   pass each clip's true language as the previous
 //                                             utterance's language (--prior=other: the wrong one)
 // Exits non-zero when language accuracy falls below LANGUAGE_FLOOR for the model.
@@ -18,9 +20,10 @@ import { textToPlan, planNotation } from '../src/translate/gloss.js';
 const DIR = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'evals/audio');
 const args = process.argv.slice(2);
 const size = args.find((arg) => !arg.startsWith('--')) || 'base';
+const gpuWeights = args.includes('--gpu-weights');
 const priorMode = args.find((arg) => arg.startsWith('--prior='))?.split('=')[1] || null;
-// Clips with the right language, out of 48, measured without a prior. Raise when it improves.
-const LANGUAGE_FLOOR = { base: 46, small: 46 };
+// Clips with the right language, out of 93, measured with q8 weights and no prior. Raise when it improves.
+const LANGUAGE_FLOOR = { base: 88, small: 87 };
 
 /** Read a 16-bit PCM mono 16 kHz wav file into a Float32Array. */
 async function readWav(file) {
@@ -62,7 +65,8 @@ function wordErrorRate(reference, hypothesis) {
 const suite = JSON.parse(await readFile(path.join(DIR, 'cases.json'), 'utf8'));
 if (!ASR_MODELS[size]) throw new Error(`Unknown model "${size}" (use ${Object.keys(ASR_MODELS).join(' or ')})`);
 console.log(`Loading ${ASR_MODELS[size]}…`);
-const whisper = await loadWhisper(lib, ASR_MODELS[size], { dtype: 'q8' });
+const dtype = gpuWeights ? { encoder_model: 'fp32', decoder_model_merged: 'q4' } : 'q8';
+const whisper = await loadWhisper(lib, ASR_MODELS[size], { dtype });
 const candidates = Object.keys(SPOKEN);
 const tally = { language: 0, text: 0, plan: 0 };
 const perGroup = {}; // by id prefix: en, he, ena (accented English)
@@ -104,7 +108,7 @@ for (const [name, g] of Object.entries(perGroup)) {
 }
 console.log(`Language ${tally.language}/${n}   exact transcript ${tally.text}/${n}   signs ${tally.plan}/${n}   mean word error rate ${pct(werSum / n)}   mean ${Math.round(msSum / n)} ms/clip   compared both languages on ${twoPass}/${n}${priorMode ? `   (prior: ${priorMode} language)` : ''}`);
 const floor = LANGUAGE_FLOOR[size] ?? n;
-if (!priorMode && tally.language < floor) {
+if (!priorMode && !gpuWeights && tally.language < floor) {
   console.error(`FAIL: language accuracy ${tally.language}/${n} is below the floor of ${floor}/${n} for ${size}`);
   process.exitCode = 1;
 }

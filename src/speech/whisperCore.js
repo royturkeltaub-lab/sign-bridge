@@ -29,10 +29,6 @@ const WRONG_SCRIPT_PENALTY = 100;
 /** Decoder length cap: generous for real speech, stops repetition loops on bad decodes. */
 const maxTokens = (seconds) => Math.min(440, 24 + Math.ceil(seconds * 15));
 const SAMPLE_RATE = 16000;
-/** Faint noise added before and after the clip (seconds, amplitude); see padWithNoise. */
-const PAD_SECONDS = 0.5;
-const PAD_LEVEL = 0.002;
-const MAX_SECONDS = 30; // Whisper's window
 
 /** Unicode script each language is written in (languages not listed skip the alphabet check). */
 const SCRIPTS = { en: 'Latin', es: 'Latin', fr: 'Latin', de: 'Latin', he: 'Hebrew', ar: 'Arabic', ru: 'Cyrillic' };
@@ -66,32 +62,11 @@ export async function loadWhisper(lib, model, { device, dtype, onProgress } = {}
   return { asr, lib, reuseEncoder: true };
 }
 
-/**
- * Surround the clip with half a second of faint noise. Whisper was trained on recordings with
- * a little room tone around the speech; a clip that starts and ends hard against digital
- * silence loses words at its edges (measured on the Hebrew eval clips). The noise is fixed,
- * so results are repeatable.
- */
-function padWithNoise(audio) {
-  const pad = Math.round(PAD_SECONDS * SAMPLE_RATE);
-  if (audio.length + 2 * pad > MAX_SECONDS * SAMPLE_RATE) return audio;
-  const out = new Float32Array(audio.length + 2 * pad);
-  out.set(audio, pad);
-  let seed = 1;
-  for (const start of [0, pad + audio.length]) {
-    for (let i = start; i < start + pad; i++) {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      out[i] = (seed / 2147483648 - 1) * PAD_LEVEL;
-    }
-  }
-  return out;
-}
-
 /** Run the encoder once, plus the single decoder step that scores the language tokens. */
 async function encode(whisper, audio) {
   const { asr, lib } = whisper;
   const { model, processor } = asr;
-  const { input_features } = await processor(padWithNoise(audio));
+  const { input_features } = await processor(audio);
   let encoder_outputs;
   if (whisper.reuseEncoder) {
     try {

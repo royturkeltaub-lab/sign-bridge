@@ -42,6 +42,7 @@ const MAP = {
   knew: 'KNOW', thought: 'THINK', toilet: 'BATHROOM', restroom: 'BATHROOM',
   done: 'FINISH', finished: 'FINISH', not: 'NOT', okay: 'OK',
   yeah: 'YES', yep: 'YES', nope: 'NO',
+  everyone: 'EVERYONE', everybody: 'EVERYONE',
 };
 
 const NO_LEMMA = new Set(['NOT', 'NO', 'ME', 'MY', 'YOU', 'YOUR', 'NOW']);

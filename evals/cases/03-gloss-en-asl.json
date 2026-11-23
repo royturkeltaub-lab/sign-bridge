@@ -3,20 +3,83 @@
   "title": "English → ASL gloss",
   "description": "Textbook ASL glossing: no articles or copula, time first, wh-word last.",
   "task": "gloss",
-  "defaults": { "sign": "asl" },
+  "defaults": {
+    "sign": "asl"
+  },
   "wrap": "text",
   "cases": [
-    { "id": "name", "input": "What is your name?", "expected": "YOUR NAME WHAT" },
-    { "id": "bathroom", "input": "Where is the bathroom?", "expected": "BATHROOM WHERE" },
-    { "id": "thanks", "input": "Thank you", "expected": "THANK-YOU" },
-    { "id": "thanks-2", "input": "Thanks!", "expected": "THANK-YOU" },
-    { "id": "love", "input": "I love you", "expected": "ME LOVE YOU" },
-    { "id": "want", "input": "Hello, I want water please", "expected": "HELLO ME WANT WATER PLEASE" },
-    { "id": "negation", "input": "I don't know", "expected": "ME NOT KNOW", "accept": ["ME KNOW NOT"] },
-    { "id": "time-first", "input": "I am going to school tomorrow", "expected": "TOMORROW ME GO SCHOOL" },
-    { "id": "article", "input": "The mother is eating", "expected": "MOTHER EAT" },
-    { "id": "work", "input": "Where do you work?", "expected": "YOU WORK WHERE" },
-    { "id": "contraction", "input": "What's your name?", "expected": "YOUR NAME WHAT" },
-    { "id": "two-sentences", "input": "Hello. What is your name?", "expected": "HELLO YOUR NAME WHAT" }
+    {
+      "id": "name",
+      "input": "What is your name?",
+      "expected": "YOUR NAME WHAT"
+    },
+    {
+      "id": "bathroom",
+      "input": "Where is the bathroom?",
+      "expected": "BATHROOM WHERE"
+    },
+    {
+      "id": "thanks",
+      "input": "Thank you",
+      "expected": "THANK-YOU"
+    },
+    {
+      "id": "thanks-2",
+      "input": "Thanks!",
+      "expected": "THANK-YOU"
+    },
+    {
+      "id": "love",
+      "input": "I love you",
+      "expected": "ME LOVE YOU"
+    },
+    {
+      "id": "want",
+      "input": "Hello, I want water please",
+      "expected": "HELLO ME WANT WATER PLEASE"
+    },
+    {
+      "id": "negation",
+      "input": "I don't know",
+      "expected": "ME NOT KNOW",
+      "accept": [
+        "ME KNOW NOT"
+      ]
+    },
+    {
+      "id": "time-first",
+      "input": "I am going to school tomorrow",
+      "expected": "TOMORROW ME GO SCHOOL"
+    },
+    {
+      "id": "article",
+      "input": "The mother is eating",
+      "expected": "MOTHER EAT"
+    },
+    {
+      "id": "work",
+      "input": "Where do you work?",
+      "expected": "YOU WORK WHERE"
+    },
+    {
+      "id": "contraction",
+      "input": "What's your name?",
+      "expected": "YOUR NAME WHAT"
+    },
+    {
+      "id": "two-sentences",
+      "input": "Hello. What is your name?",
+      "expected": "HELLO YOUR NAME WHAT"
+    },
+    {
+      "id": "hello-everyone",
+      "input": "Hello everyone",
+      "expected": "HELLO EVERYONE"
+    },
+    {
+      "id": "hi-everybody",
+      "input": "Hi everybody!",
+      "expected": "HELLO EVERYONE"
+    }
   ]
 }
